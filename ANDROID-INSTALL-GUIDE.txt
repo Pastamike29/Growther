@@ -1,0 +1,16 @@
+GROWTHER — INSTALL ON ANDROID (PRIVATE TEST)
+
+This package is an installable website/PWA, not an APK.
+
+1. Extract Growther-PWA-site.zip on your computer.
+2. Upload the extracted site-package folder to an HTTPS static host. Netlify Drop supports uploading a site folder or ZIP: https://app.netlify.com/drop
+3. Open the HTTPS URL Netlify gives you in Chrome on your Android phone.
+4. In Chrome, open ⋮ and choose Install app (or Add to Home screen), then confirm.
+5. Launch Growther from the new home-screen icon.
+
+Important:
+- A local file:// URL cannot be installed as a PWA. The HTTPS hosting step is required for the service worker and install flow.
+- Anyone who has the deployed URL may be able to open the prototype. Its demo profile/log data is stored separately on each device/browser.
+- Existing data from the file:// prototype does not automatically transfer to the hosted version.
+- Cloud backup needs network access and correct Supabase table/security policies. Keep it disabled for your personal test if it is not ready.
+- The PWA caches the app shell for offline startup; online-only features such as cloud backup still need internet.

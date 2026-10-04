@@ -1,0 +1,44 @@
+.ga-meal-scanner{display:grid;gap:12px}
+.ga-meal-scanner .ga-scan-picker{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.ga-scan-picker input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.ga-meal-preview{display:grid;justify-items:center;gap:7px;padding:10px;border:1px solid #514462;border-radius:14px;background:#15131d;color:#bdb2c8;font-size:10px;text-align:center}
+.ga-meal-preview[hidden],.ga-meal-scan-status[hidden],.ga-meal-scan-result[hidden]{display:none!important}
+.ga-meal-preview img{display:block;max-width:100%;max-height:280px;object-fit:contain;border-radius:10px}
+.ga-meal-scan-notice,.ga-meal-disclaimer{margin:0;color:#b9aec5;font-size:10px;line-height:1.55}
+.ga-meal-consent{display:flex;align-items:center;gap:11px;min-height:52px;padding:10px 12px;border:1px solid #514263;border-radius:12px;background:#201a2a;color:#f0e7f8;font-size:11px;line-height:1.4;cursor:pointer;touch-action:manipulation}
+.ga-meal-consent input{position:static;flex:none;width:22px;height:22px;margin:0;opacity:1;pointer-events:auto;accent-color:#cb9bf4;cursor:pointer}
+.ga-meal-scan-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ga-meal-scan-actions .cta{margin:0;min-height:44px}
+.ga-meal-scan-actions button:disabled{opacity:.48;cursor:not-allowed}
+.ga-meal-scan-status{padding:10px 11px;border:1px solid #55446a;border-radius:12px;background:#211b2b;color:#e3d4f0;font-size:10px;line-height:1.5}
+.ga-meal-scan-status.error{border-color:#a95e76;background:#2a1721;color:#ffd1dd}
+.ga-meal-scan-status.success{border-color:#4d806d;background:#17271f;color:#d1f1de}
+.ga-meal-scan-result{display:grid;gap:10px;padding:12px;border:1px solid #634d7c;border-radius:15px;background:linear-gradient(145deg,#251b31,#17141e)}
+.ga-meal-result-head,.ga-meal-item-top,.ga-meal-items-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ga-meal-result-head h3{margin:0;font-size:15px}
+.ga-meal-confidence{flex:none;color:#d9b6fb;font-size:9px}
+.ga-meal-cuisine{margin:-6px 0 0;color:#b9a5ca;font-size:10px}
+.ga-meal-name-label,.ga-meal-edit-field{display:grid;gap:5px;color:#cfc0dd;font-size:9px}
+.ga-meal-name-label input,.ga-meal-item input{min-width:0;width:100%;border:1px solid #50435e;border-radius:9px;background:#111018;color:#fbf6ff;padding:9px;font:inherit;font-size:11px}
+.ga-meal-items-head{align-items:flex-end}
+.ga-meal-items-head strong{font-size:12px}
+.ga-meal-items-head small,.ga-meal-item-top small,.ga-meal-item-localized{color:#b5a8c1;font-size:8px}
+.ga-meal-item-list{display:grid;gap:8px}
+.ga-meal-item{display:grid;gap:8px;padding:10px;border:1px solid #44384f;border-radius:12px;background:#1b1823}
+.ga-meal-item-top input{font-weight:750}
+.ga-meal-item-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.ga-meal-edit-field input{padding:7px 6px;font-size:10px}
+.ga-meal-remove{justify-self:start;border:0;background:transparent;color:#efb0c1;font-size:9px;text-decoration:underline;cursor:pointer}
+.ga-meal-item-localized{line-height:1.4}
+.ga-meal-add-item{margin:0!important;min-height:40px}
+.ga-meal-totals{padding:10px;border:1px solid #6c5186;border-radius:12px;background:#21182c}
+.ga-meal-totals-title{display:block;margin-bottom:8px;color:#f2e4ff;font-size:11px}
+.ga-meal-total-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.ga-meal-total-grid>div{display:grid;gap:2px;padding:7px;border-radius:9px;background:#17131e}
+.ga-meal-total-grid strong{font-size:12px;color:#f6eaff}
+.ga-meal-total-grid small{font-size:8px;color:#b6a9c2}
+.ga-meal-notes{margin:0;padding-left:17px;color:#c9bbd5;font-size:9px;line-height:1.5}
+.ga-meal-save{margin:0!important;min-height:46px}
+html[data-theme="light"] .ga-meal-preview,html[data-theme="light"] .ga-meal-item,html[data-theme="light"] .ga-meal-name-label input,html[data-theme="light"] .ga-meal-item input{background:#fff;color:#30263a;border-color:#d5c7df}
+html[data-theme="light"] .ga-meal-scan-notice,html[data-theme="light"] .ga-meal-disclaimer,html[data-theme="light"] .ga-meal-item-top small,html[data-theme="light"] .ga-meal-item-localized{color:#665b70}
+@media(max-width:360px){.ga-meal-item-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.ga-meal-items-head{align-items:flex-start;flex-direction:column;gap:3px}}
