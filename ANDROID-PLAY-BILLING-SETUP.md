@@ -14,7 +14,7 @@
 1. In Play Console, open the app with package name `com.wongwaiyut.growther` and finish the required app setup.
 2. Go to **Monetize with Play > Products > Subscriptions** and create subscription `growther_premium_monthly`; add and activate an auto-renewing base plan whose ID is exactly `monthly`.
 3. Create `growther_premium_annual`; add and activate an auto-renewing base plan whose ID is exactly `annual`.
-4. Set actual market prices in Play Console. The app displays Play's localized prices when loaded. The current `$24.90/year` and approximately `฿80/week` artwork/text are preview values until you set matching store prices. The monthly billing price corresponds to about ฿80 per week, or approximately ฿347 per month.
+4. Set actual market prices in Play Console. The app displays Play's localized prices when loaded. The monthly preview is now `฿200/month` (about `฿46/week`); the annual preview remains `$24.90/year`. These are preview values until you set matching store prices.
 
 ## 2. Give Supabase server-only access to Play purchase verification
 

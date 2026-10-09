@@ -4,7 +4,7 @@
 
 The Android app uses Capacitor and the native Google Play Billing client. The Android package ID is `com.wongwaiyut.growther`. Supabase verifies Google Play purchase tokens directly using a server-only Google service account credential. The app does not send a Supabase user ID to RevenueCat or another subscription intermediary.
 
-The monthly Play product ID is `growther_premium_monthly` with base plan ID `monthly`. The annual product ID is `growther_premium_annual` with base plan ID `annual`. Actual localized prices must be configured in Play Console; the artwork's `$24.90/year` and `฿80/week` are preview targets.
+The monthly Play product ID is `growther_premium_monthly` with base plan ID `monthly`. The annual product ID is `growther_premium_annual` with base plan ID `annual`. Actual localized prices must be configured in Play Console; the current preview values are `฿200/month` and `$24.90/year`.
 
 ## Access rules
 
