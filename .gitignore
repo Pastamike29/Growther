@@ -12,5 +12,19 @@ Growther-PWA-site*.zip
 
 # Local dependencies and operating system files
 node_modules/
+android/.gradle/
+android/local.properties
+android/**/build/
+*.jks
+*.keystore
 .DS_Store
 Thumbs.db
+# Generated Capacitor and Android outputs
+site-package/
+android/app/src/main/assets/public/
+android/app/release/
+*.aab
+*.apk
+android/.idea/
+.idea/
+supabase/.temp/

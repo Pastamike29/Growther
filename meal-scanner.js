@@ -12,16 +12,18 @@ window.fuel = function () {
   const end = html.indexOf('</section>', start);
   if (heading < 0 || start < 0 || end < 0) return html;
   const scanner = `<section class="scanner-box ga-meal-scanner" aria-label="AI meal photo scanner">
-    <label class="scanner-button ga-scan-picker">📷 Take or choose one clear photo
+    <label class="scanner-button ga-scan-picker" onclick="return gaMealScanRequestPhoto(event)">📷 Take or choose one clear photo
       <input id="gaMealScanInput" type="file" accept="image/*" onchange="gaMealScanPhotoSelected(this)">
     </label>
     <div class="ga-meal-preview" id="gaMealPreview" hidden><img id="gaMealPreviewImage" alt="Preview of the selected meal photo"><span>Preview stays on this device until you analyze.</span></div>
-    <p class="ga-meal-scan-notice">Available to signed-in adult cloud accounts. Analysis sends this photo to Growther’s AI provider for a one-time estimate. Growther does not save the photo. Avoid photos containing faces, labels with personal details, or other private information.</p>
+    <p class="ga-meal-scan-notice">Available to signed-in adult cloud accounts. You can make up to 7 AI food requests per day across photo scans and typed meal estimates. Analysis sends this photo to Growther’s AI provider for a one-time estimate. Growther does not save the photo. Avoid photos containing faces, labels with personal details, or other private information.</p>
     <label class="ga-meal-consent"><input id="gaMealScanConsent" type="checkbox" onchange="gaMealScanEnableAnalyze()"><span>I understand this meal photo will be sent for AI analysis.</span></label>
+    <div class="ga-meal-auth" id="gaMealScanAuth" hidden onclick="if(event.target===this)gaMealScanCloseAuth()"><section class="ga-meal-auth-card" role="dialog" aria-modal="true" aria-labelledby="gaMealAuthTitle"><button class="ga-meal-auth-close" type="button" aria-label="Close sign in" onclick="gaMealScanCloseAuth()">×</button><strong id="gaMealAuthTitle">Sign in to scan a meal</strong><p>Continue with Google to use meal scanning. Your photo is sent for analysis only after you confirm sharing and tap Analyze Meal.</p><button type="button" class="ga-meal-google" id="gaCloudGoogle" onclick="gaCloudSignInWithGoogle()">Continue with Google</button><p class="ga-meal-auth-message" id="gaCloudMessage" role="status" aria-live="polite"></p></section></div>
     <div class="ga-meal-scan-actions"><button class="cta secondary" type="button" onclick="gaMealScanClearPhoto()">Remove photo</button><button class="cta" id="gaMealAnalyzeButton" type="button" onclick="gaAnalyzeMealPhoto()" disabled>Analyze Meal</button></div>
     <div id="gaMealScanStatus" class="ga-meal-scan-status" role="status" aria-live="polite" hidden></div>
     <section id="gaMealScanResult" class="ga-meal-scan-result" aria-label="Meal analysis result" hidden></section>
   </section>`;
+  setTimeout(() => gaMealScanUpdateAuthUI(!!gaCloudUser), 0);
   return html.slice(0, start) + scanner + html.slice(end + '</section>'.length);
 };
 
@@ -46,6 +48,42 @@ function gaMealScanEnableAnalyze() {
   const consent = document.getElementById('gaMealScanConsent');
   if (button) button.disabled = gaMealScanBusy || !gaMealScanFile || !consent?.checked;
 }
+
+function gaMealScanRequestPhoto(event) {
+  if (typeof gaCloudUser !== 'undefined' && gaCloudUser) return true;
+  event?.preventDefault();
+  gaMealScanOpenAuth();
+  return false;
+}
+
+function gaMealScanOpenAuth() {
+  const modal = document.getElementById('gaMealScanAuth');
+  if (!modal) return;
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  gaCloudShow(secure ? 'Continue with Google to sign in.' : 'Open Growther over HTTPS or localhost to continue with Google.', !secure);
+  setTimeout(() => document.getElementById('gaCloudGoogle')?.focus(), 20);
+}
+
+function gaMealScanCloseAuth() {
+  const modal = document.getElementById('gaMealScanAuth');
+  if (!modal) return;
+  modal.hidden = true;
+  document.body.style.overflow = '';
+}
+
+function gaMealScanUpdateAuthUI(signedIn) {
+  const modal = document.getElementById('gaMealScanAuth');
+  if (signedIn && modal && !modal.hidden) {
+    gaMealScanCloseAuth();
+    gaMealScanSetStatus('Signed in. Tap Take or choose one clear photo to continue.', 'success');
+  }
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !document.getElementById('gaMealScanAuth')?.hidden) gaMealScanCloseAuth();
+});
 
 function gaMealScanToJpeg(blob, maxEdge = 1800, quality = 0.86) {
   return new Promise((resolve, reject) => {
@@ -154,15 +192,20 @@ function gaMealScanClearPhoto() {
   gaMealScanEnableAnalyze();
 }
 
-function gaMealScanErrorText(code, status) {
+function gaMealScanErrorText(code, status, detail = '') {
   if (code === 'NO_FOOD_DETECTED' || code === 'UNRECOGNIZABLE_FOOD') return 'No meal could be identified reliably. Try a clearer photo that shows the whole plate.';
   if (code === 'SIGN_IN_REQUIRED' || code === 'ADULT_ACCOUNT_REQUIRED') return 'Meal scanning currently requires a signed-in adult cloud account. Open Profile → Cloud Backup to sign in.';
-  if (code === 'RATE_LIMITED' || status === 429) return 'The daily scan allowance or AI service limit was reached. Please try again later.';
+  if (code === 'PREMIUM_REQUIRED' || status === 403) return 'An active Growther Premium subscription is required for AI meal scans and AI meal logs. Choose a plan to subscribe.';
+  if (code === 'PREMIUM_STATUS_UNAVAILABLE') return 'Premium access could not be checked right now. Try again shortly.';
+  if (code === 'RATE_LIMITED' || status === 429) return /daily scan limit reached/i.test(detail)
+    ? 'Daily scan limit reached. Try again tomorrow.'
+    : 'The meal analysis service is busy. Please wait and try again.';
   if (code === 'IMAGE_TOO_LARGE' || status === 413) return 'The compressed photo is too large. Choose a smaller image.';
   if (code === 'INVALID_IMAGE') return 'That image could not be read. Choose a JPEG, PNG, or WebP photo.';
   if (code === 'AI_TIMEOUT' || status === 504) return 'Analysis took too long. Try again with a clearer, smaller photo.';
   if (code === 'INVALID_MODEL_RESPONSE') return 'The scan returned an incomplete result. Try again with a clearer photo.';
   if (code === 'SCANNER_NOT_CONFIGURED') return 'The secure meal-scanning service is not configured for this site yet. The site owner needs to deploy it before photo analysis can work.';
+  if (code === 'SCANNER_CONNECTION_FAILED') return 'Could not reach the meal scanner. Check your connection. If it keeps happening, the site owner must deploy scan-meal and allow this site origin in GROWTHER_ALLOWED_ORIGINS.';
   if (code === 'PROFILE_UNAVAILABLE' || code === 'AI_UNAVAILABLE' || status >= 500) return 'Meal scanning is temporarily unavailable. Try again later.';
   return 'Could not connect to the meal scanner. Check your connection and try again.';
 }
@@ -176,7 +219,7 @@ async function gaAnalyzeMealPhoto() {
     return;
   }
   if (!gaCloudUser) {
-    gaMealScanSetStatus(gaMealScanErrorText('SIGN_IN_REQUIRED'), 'error');
+    gaMealScanOpenAuth();
     return;
   }
   gaMealScanBusy = true;
@@ -193,11 +236,14 @@ async function gaAnalyzeMealPhoto() {
       reader.onerror = () => reject(new Error('IMAGE_DECODE_FAILED'));
       reader.readAsDataURL(gaMealScanFile);
     });
-    const { data, error } = await gaCloudClient.functions.invoke('scan-meal', { body: { image_data_url: dataUrl } });
+    const purchaseToken = await window.gaGetActivePurchaseToken?.();
+    if (!purchaseToken) { window.gaOpenPremiumOffer?.(); throw Object.assign(new Error('PREMIUM_REQUIRED'), { code: 'PREMIUM_REQUIRED', status: 403 }); }
+    const { data, error } = await gaCloudClient.functions.invoke('scan-meal', { body: { image_data_url: dataUrl, purchase_token: purchaseToken } });
     if (error) {
+      if (error.name === 'FunctionsFetchError' || /failed to send a request/i.test(error.message || '')) throw Object.assign(new Error('SCANNER_CONNECTION_FAILED'), { code: 'SCANNER_CONNECTION_FAILED' });
       let apiError = null;
       try { apiError = await error.context?.clone?.().json(); } catch { /* Use the safe local message below. */ }
-      throw Object.assign(new Error('SCAN_REQUEST_FAILED'), { code: apiError?.error, status: error.context?.status });
+      throw Object.assign(new Error(apiError?.message || 'SCAN_REQUEST_FAILED'), { code: apiError?.error, status: error.context?.status });
     }
     if (!data || typeof data.success !== 'boolean') throw Object.assign(new Error('INVALID_MODEL_RESPONSE'), { code: 'INVALID_MODEL_RESPONSE' });
     if (!data.success) throw Object.assign(new Error(data.message || 'No meal detected.'), { code: data.error });
@@ -205,7 +251,7 @@ async function gaAnalyzeMealPhoto() {
     gaMealScanRenderResult();
     gaMealScanSetStatus('Review and edit the estimate before saving. Nothing has been added to your log yet.', 'success');
   } catch (error) {
-    const message = error.code === 'IMAGE_DECODE_FAILED' ? 'The photo could not be prepared. Choose another image.' : gaMealScanErrorText(error.code, error.status);
+    const message = error.code === 'IMAGE_DECODE_FAILED' ? 'The photo could not be prepared. Choose another image.' : gaMealScanErrorText(error.code, error.status, error.message);
     gaMealScanSetStatus(message, 'error');
   } finally {
     clearInterval(progress);
@@ -265,6 +311,7 @@ function gaMealScanCreateItem(item, index) {
   for (const [key, label, min, max, step] of definitions) {
     const wrap = gaMealScanText('label', 'ga-meal-edit-field', label);
     const input = document.createElement('input'); input.type = 'number'; input.min = String(min); input.max = String(max); input.step = String(step); input.value = String(item[key] ?? 0); input.setAttribute('aria-label', `${label} for ${item.name}`);
+    input.style.cssText = 'position:static;display:block;visibility:visible;width:100%;height:36px;min-height:36px;box-sizing:border-box;opacity:1;color:#fbf6ff;-webkit-text-fill-color:#fbf6ff;background:#111018;border:1px solid #50435e;border-radius:8px;padding:7px 8px;font-size:12px;';
     input.addEventListener('input', () => { item[key] = input.value === '' ? 0 : Number(input.value); gaMealScanRenderTotals(document.querySelector('.ga-meal-totals')); });
     wrap.append(input); fields.append(wrap);
   }
@@ -304,13 +351,21 @@ function gaMealScanSaveResult() {
   const before = new Set(gaAchievementList().filter(x => x.earned).map(x => x.id));
   const key = gaNDateKey(gaNutritionDate);
   gaNutritionLogs[key] = Array.isArray(gaNutritionLogs[key]) ? gaNutritionLogs[key] : [];
-  for (const item of result.items) gaNutritionLogs[key].push({
+  const items = result.items.map(item => ({
+    name: item.name.trim(), estimatedGrams: Math.round(Number(item.estimated_grams)),
+    calories: Math.round(Number(item.calories)), protein: Math.round(Number(item.protein_g) * 10) / 10,
+    carbs: Math.round(Number(item.carbs_g) * 10) / 10, fat: Math.round(Number(item.fat_g) * 10) / 10,
+    cuisine: item.cuisine || result.cuisine || null, confidence: item.confidence ?? null,
+  }));
+  const total = items.reduce((sum, item) => ({
+    estimatedGrams: sum.estimatedGrams + item.estimatedGrams, calories: sum.calories + item.calories,
+    protein: sum.protein + item.protein, carbs: sum.carbs + item.carbs, fat: sum.fat + item.fat,
+  }), { estimatedGrams: 0, calories: 0, protein: 0, carbs: 0, fat: 0 });
+  gaNutritionLogs[key].push({
     id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
-    name: item.name.trim(), mealName: result.meal_name.trim(), slot: 'snack',
-    estimatedGrams: Math.round(Number(item.estimated_grams)), calories: Math.round(Number(item.calories)),
-    protein: Math.round(Number(item.protein_g) * 10) / 10, carbs: Math.round(Number(item.carbs_g) * 10) / 10,
-    fat: Math.round(Number(item.fat_g) * 10) / 10, calcium: null, vitaminD: null,
-    cuisine: item.cuisine || result.cuisine || null, nutritionSource: 'ai_photo_estimate', loggedAt: new Date().toISOString(),
+    name: result.meal_name.trim(), mealName: result.meal_name.trim(), slot: 'snack', ...total,
+    calcium: null, vitaminD: null, cuisine: result.cuisine || null, confidence: result.confidence ?? null,
+    items, itemCount: items.length, nutritionSource: 'ai_photo_estimate', loggedAt: new Date().toISOString(),
   });
   localStorage.setItem('ga-nutrition-logs', JSON.stringify(gaNutritionLogs));
   save();
@@ -324,8 +379,40 @@ function gaMealScanSaveResult() {
   toast('Estimated foods saved to today’s log');
 }
 
+function gaMealScanNormalizeLegacyPlates() {
+  const migrationKey = 'ga-meal-scan-plate-grouping-v3';
+  if (localStorage.getItem(migrationKey) === '1') return false;
+  let changed = false;
+  for (const [key, records] of Object.entries(gaNutritionLogs || {})) {
+    if (!Array.isArray(records)) continue;
+    const grouped = [];
+    for (const record of records) {
+      if (record?.nutritionSource !== 'ai_photo_estimate' || !record.mealName) { grouped.push(record); continue; }
+      // Older saves wrote each ingredient as a row. A previous version could
+      // also have wrapped each ingredient in a one-item `items` array.
+      if (Array.isArray(record.items) && record.items.length > 1) { grouped.push(record); continue; }
+      const previous = grouped[grouped.length - 1];
+      const samePlate = previous?._legacyScanGroup === true && previous.mealName === record.mealName;
+      const child = record.items?.[0] || { name: record.name, estimatedGrams: record.estimatedGrams, calories: record.calories, protein: record.protein, carbs: record.carbs, fat: record.fat, cuisine: record.cuisine || null };
+      for (const field of ['estimatedGrams','calories','protein','carbs','fat']) child[field] = Number(child[field]) || 0;
+      if (samePlate) {
+        previous.items.push(child); previous.itemCount = previous.items.length;
+        for (const field of ['estimatedGrams','calories','protein','carbs','fat']) previous[field] = (Number(previous[field]) || 0) + child[field];
+      } else grouped.push({ ...record, name: record.mealName, items: [child], itemCount: 1, _legacyScanGroup: true });
+    }
+    for (const record of grouped) if (record?._legacyScanGroup) delete record._legacyScanGroup;
+    if (grouped.length !== records.length || grouped.some((record,index) => record !== records[index])) {
+      gaNutritionLogs[key] = grouped; changed = true;
+    }
+  }
+  if (changed) localStorage.setItem('ga-nutrition-logs', JSON.stringify(gaNutritionLogs));
+  localStorage.setItem(migrationKey, '1');
+  return changed;
+}
+
 function gaMealScanAppendSavedMacros() {
   if (state.screen !== 'fuel') return;
+  if (gaMealScanNormalizeLegacyPlates()) { window.showScreen('fuel'); return; }
   const key = gaNDateKey(gaNutritionDate);
   document.querySelectorAll('.nutrition-meal-row').forEach(row => {
     const onclick = row.querySelector('button[onclick]')?.getAttribute('onclick') || '';
@@ -334,6 +421,17 @@ function gaMealScanAppendSavedMacros() {
     if (!record) return;
     const detail = row.querySelector('.nutrition-meal-copy small');
     if (detail) detail.textContent = `${record.estimatedGrams} g · ${record.calories} kcal · ${record.protein} g protein · ${record.carbs} g carbs · ${record.fat} g fat · image-based estimate`;
+    if (record.items?.length && !row.querySelector('.nutrition-meal-ingredients')) {
+      const disclosure = document.createElement('details'); disclosure.className = 'nutrition-meal-ingredients';
+      const summary = document.createElement('summary'); summary.textContent = `${record.items.length} ingredients · Show details`; disclosure.append(summary);
+      const list = document.createElement('div'); list.className = 'nutrition-meal-ingredient-list';
+      for (const item of record.items) {
+        const line = document.createElement('p');
+        line.textContent = `${item.name} · ${item.estimatedGrams} g · ${item.calories} kcal · ${item.protein} g protein · ${item.carbs} g carbs · ${item.fat} g fat`;
+        list.append(line);
+      }
+      disclosure.append(list); row.querySelector('.nutrition-meal-copy')?.append(disclosure);
+    }
   });
 }
 

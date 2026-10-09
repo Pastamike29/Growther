@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Growther</string>
+    <string name="title_activity_main">Growther</string>
+    <string name="package_name">com.wongwaiyut.growther</string>
+    <string name="custom_url_scheme">com.wongwaiyut.growther</string>
+</resources>

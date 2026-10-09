@@ -19,6 +19,7 @@ if (Test-Path -LiteralPath $outputPath) {
 
 $supabaseUrl = $env:GROWTHER_PROD_SUPABASE_URL
 $publishableKey = $env:GROWTHER_PROD_SUPABASE_PUBLISHABLE_KEY
+$privacyUrl = $env:GROWTHER_PRIVACY_URL
 if (-not $supabaseUrl -or -not $publishableKey) {
   throw 'Set GROWTHER_PROD_SUPABASE_URL and GROWTHER_PROD_SUPABASE_PUBLISHABLE_KEY in the current PowerShell session first.'
 }
@@ -33,6 +34,13 @@ if (-not [System.Uri]::TryCreate($supabaseUrl, [System.UriKind]::Absolute, [ref]
 if ($publishableKey -notmatch '^sb_publishable_[A-Za-z0-9_-]+$') {
   throw 'GROWTHER_PROD_SUPABASE_PUBLISHABLE_KEY must be a Supabase publishable key (sb_publishable_...). Never use a secret/service-role key here.'
 }
+if ($privacyUrl) {
+  $parsedPrivacyUrl = $null
+  if (-not [System.Uri]::TryCreate($privacyUrl, [System.UriKind]::Absolute, [ref]$parsedPrivacyUrl) -or
+      $parsedPrivacyUrl.Scheme -ne 'https' -or $parsedPrivacyUrl.Query -or $parsedPrivacyUrl.Fragment) {
+    throw 'GROWTHER_PRIVACY_URL must be a public HTTPS URL without a query string or fragment.'
+  }
+}
 
 New-Item -ItemType Directory -Path $outputPath | Out-Null
 foreach ($item in @('index.html', 'meal-scanner.js', 'meal-scanner.css', 'service-worker.js', 'manifest.webmanifest', 'icons', 'assets')) {
@@ -41,6 +49,9 @@ foreach ($item in @('index.html', 'meal-scanner.js', 'meal-scanner.css', 'servic
     throw "Required production file is missing: $sourceItem"
   }
   Copy-Item -LiteralPath $sourceItem -Destination $outputPath -Recurse
+  if ($item -eq 'assets') {
+    Get-ChildItem -LiteralPath (Join-Path $outputPath 'assets') -Recurse -File -Filter '*.png' | Remove-Item -Force
+  }
 }
 
 $config = @"
@@ -48,6 +59,7 @@ $config = @"
 // Never add a Supabase secret/service-role key to this file.
 window.GA_SUPABASE_URL = '$supabaseUrl';
 window.GA_SUPABASE_PUBLISHABLE_KEY = '$publishableKey';
+window.GROWTHER_PRIVACY_URL = '$privacyUrl';
 "@
 $configPath = Join-Path $outputPath 'supabase-config.js'
 [System.IO.File]::WriteAllText($configPath, $config, [System.Text.UTF8Encoding]::new($false))

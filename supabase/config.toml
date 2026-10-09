@@ -1,0 +1,15 @@
+# Keep the gateway JWT check enabled: scan-meal is an authenticated-user endpoint.
+[functions.scan-meal]
+verify_jwt = true
+
+# Verify the caller's Supabase session before checking a Play subscription.
+[functions.verify-play-subscription]
+verify_jwt = true
+
+# The form is available to local-only users, so the function checks the exact app origin,
+# validates explicit consent, limits request size, and applies best-effort rate limits itself.
+[functions.send-support-message]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true

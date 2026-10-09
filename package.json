@@ -1,0 +1,22 @@
+{
+  "name": "growther-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Growther Capacitor Android app with direct Google Play Billing",
+  "scripts": {
+    "build:billing-bridge": "node sync-site.js && esbuild src/google-play-billing.js --bundle --format=iife --platform=browser --outfile=site-package/google-play-billing.bundle.js && esbuild src/google-play-billing.js --bundle --format=iife --platform=browser --outfile=google-play-billing.bundle.js",
+    "cap:sync": "npm run build:billing-bridge && cap sync android",
+    "cap:add:android": "cap add android",
+    "android:open": "cap open android",
+    "android:bundle": "cd android && gradlew.bat bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capgo/native-purchases": "8.9.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "esbuild": "0.28.2"
+  }
+}
