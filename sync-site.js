@@ -3,7 +3,6 @@ const path = require('node:path');
 
 const root = __dirname;
 const web = path.join(root, 'site-package');
-fs.mkdirSync(web, { recursive: true });
 const files = [
   'index.html', 'manifest.webmanifest', 'meal-scanner.css', 'meal-scanner.js',
   'service-worker.js', 'supabase-config.js',

@@ -1,6 +1,6 @@
 # Growth Arc backend setup (Supabase)
 
-This folder contains the cloud-backend foundation for the prototype. The first migration creates private per-user profile, sleep, nutrition, exercise, rest-day, and saved-meal records plus a private bucket for optional meal photos. The second adds the private account-backup row used by the current prototype's opt-in sync buttons.
+This folder contains the cloud-backend foundation for the prototype. The first migration creates private per-user profile, sleep, nutrition, exercise, rest-day, and saved-meal records plus a private bucket for optional meal photos. Whole-app cloud backup has been retired; only local data export remains.
 
 ## Important before launch
 
@@ -15,7 +15,7 @@ This folder contains the cloud-backend foundation for the prototype. The first m
 
 1. Create a Supabase project at [supabase.com/dashboard](https://supabase.com/dashboard). Choose a region suitable for your initial testers and use a strong, unique database password.
 2. Open **SQL Editor → New query**, paste and run `migrations/202609290001_growth_arc_backend.sql` once.
-3. In a new SQL Editor query, paste and run `migrations/202609300001_account_backups.sql` once.
+3. Do not run the legacy `migrations/202609300001_account_backups.sql` migration in a new project. If that migration was already applied, run `migrations/202610100002_remove_account_backups.sql` in SQL Editor to delete the old backup table and snapshots.
 4. In **Authentication → URL Configuration**, set the Site URL to your local server origin for development and add that exact origin to the redirect URL allowlist (for example `http://127.0.0.1:5500/**`). Add the deployed HTTPS origin before sharing online. Keep email confirmation enabled and sign in after confirming.
 5. In **Storage**, confirm the `meal-photos` bucket is private and the policies from the migration exist.
 6. The supplied project URL and publishable key are in `../supabase-config.js`. A publishable key is designed for public clients; never use the secret key in browser code.
@@ -24,7 +24,7 @@ This folder contains the cloud-backend foundation for the prototype. The first m
 
 ## Current connection status
 
-The app now uses Google OAuth through Supabase Auth and offers opt-in automatic backup from Profile → Cloud Backup. The app has no email/password account creation or sign-in controls. Backup starts only after the user enables it; allowlisted Growther app data then syncs to the signed-in user's private `account_backups` row after changes. Meal photos and Supabase auth tokens are excluded. The page must be served from `http://localhost` or HTTPS; browser cloud requests do not work from a `file://` page. The browser CDN SDK is loaded from jsDelivr, so internet access is required.
+The app uses Google OAuth through Supabase Auth for authenticated meal analysis and support features. It does not back up app data to the cloud. App data stays in this browser or on this device; users can export a JSON copy from Settings. The page must be served from `http://localhost` or HTTPS for authenticated cloud features; browser cloud requests do not work from a `file://` page.
 
 ### Configure Google sign-in
 
@@ -59,11 +59,11 @@ OpenRouter accepts a data URL in a chat-completion `image_url` part and supports
 
 The Settings forms ask for a name, reply email, note, and explicit email consent. The browser invokes `send-support-message`; it does not store the note locally or attach profile, meal, or exercise records. The Edge Function uses Resend with server-side secrets `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `GROWTHER_SUPPORT_EMAIL`. Verify the sender domain with Resend before configuring the sender address. Set `GROWTHER_ALLOWED_ORIGINS` to exact app origins. The endpoint validates the message and applies best-effort in-memory IP/email rate limits; before a high-volume public launch, add a durable rate-limit or challenge provider.
 
-The settings Storage view estimates the app's local key/value data and browser-reported origin usage. Export downloads only Growther-owned local keys; Supabase auth tokens and cloud-sync control markers are excluded. Clear removes Growther local data, pauses auto backup on this device, and restarts setup; it does not delete the private cloud backup or change browser notification permission.
+The settings Storage view estimates the app's local key/value data and browser-reported origin usage. Export downloads only Growther-owned local keys. Clear removes Growther local data and restarts setup; it does not change browser notification permission.
 
 ## Suggested first sync order
 
-1. Verify Google sign-in, opt in to automatic backup, and confirm existing cloud/local data is reconciled as expected.
+1. Verify authenticated Google sign-in for meal analysis and support. Confirm app data export creates a JSON file and clear removes only Growther-owned local data.
 2. Replace snapshot sync with direct row-level synchronization as the app is modularized.
 3. Private photo upload only after explicit user confirmation; store object paths in a later migration and add a user-controlled delete action.
 4. Community only after moderation and safety design is ready.

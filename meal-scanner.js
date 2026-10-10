@@ -194,7 +194,7 @@ function gaMealScanClearPhoto() {
 
 function gaMealScanErrorText(code, status, detail = '') {
   if (code === 'NO_FOOD_DETECTED' || code === 'UNRECOGNIZABLE_FOOD') return 'No meal could be identified reliably. Try a clearer photo that shows the whole plate.';
-  if (code === 'SIGN_IN_REQUIRED' || code === 'ADULT_ACCOUNT_REQUIRED') return 'Meal scanning currently requires a signed-in adult cloud account. Open Profile → Cloud Backup to sign in.';
+  if (code === 'SIGN_IN_REQUIRED' || code === 'ADULT_ACCOUNT_REQUIRED') return 'Meal scanning currently requires a signed-in adult cloud account. Tap Continue with Google when prompted.';
   if (code === 'PREMIUM_REQUIRED' || status === 403) return 'An active Growther Premium subscription is required for AI meal scans and AI meal logs. Choose a plan to subscribe.';
   if (code === 'PREMIUM_STATUS_UNAVAILABLE') return 'Premium access could not be checked right now. Try again shortly.';
   if (code === 'RATE_LIMITED' || status === 429) return /daily scan limit reached/i.test(detail)

@@ -1,6 +1,6 @@
 # Growther production cloud deployment
 
-This guide prepares the existing opt-in Supabase backup, AI meal-scanner, and support-email features for a production release. It does not deploy the site or move anyone's local data. The app stores its working copy in this browser. Google sign-in creates an auth identity and a minimal cloud profile (account ID and adult age band) for cloud feature access; it does not enable backup. The user must separately choose **Turn on automatic backup** before the app uploads profile, progress, and logs into one private account snapshot. Restore replaces the current browser's allowlisted Growther data after a confirmation. The meal scanner sends a compressed photo directly to its authenticated Edge Function only after explicit photo-sharing consent; Growther does not persist that photo. Support, feedback, and bug reports send the user's name, reply email, and note to the configured support inbox only after the user checks the email consent box.
+This guide covers the Supabase AI meal-scanner and support-email features. Whole-app cloud backup has been retired; app data stays on the device and can be exported from Settings. Google sign-in creates an auth identity and minimal profile for authenticated cloud features. The meal scanner sends a compressed photo directly to its authenticated Edge Function only after explicit photo-sharing consent; Growther does not persist that photo. Support, feedback, and bug reports send the user's name, reply email, and note to the configured support inbox only after the user checks the email consent box.
 
 ## Production gates
 
@@ -18,11 +18,11 @@ This guide prepares the existing opt-in Supabase backup, AI meal-scanner, and su
 4. In **Settings → API Keys**, obtain the project's URL and `sb_publishable_...` key. The publishable key is expected in the client; never use an `sb_secret_...`, service-role, database password, or SMTP credential in the static site.
 5. Apply the migrations in order to the new project:
    - `supabase/migrations/202609290001_growth_arc_backend.sql`
-   - `supabase/migrations/202609300001_account_backups.sql`
+   - Do not apply the retired `supabase/migrations/202609300001_account_backups.sql`. If it was previously applied, run `supabase/migrations/202610100002_remove_account_backups.sql` to delete its table and saved snapshots.
    - `supabase/migrations/202610040001_meal_scan_quota.sql`
    - `supabase/migrations/202610060001_seven_daily_ai_requests.sql`
    - `supabase/migrations/202610100001_google_play_purchase_claims.sql`
-6. Run Supabase Security Advisor and inspect every table/storage policy. Confirm RLS is on and the `account_backups` policy is owner-only. Test with two separate accounts that neither can read, overwrite, nor delete the other's backup; test signed-out access is denied.
+6. Run Supabase Security Advisor and inspect every table/storage policy. Confirm RLS is enabled on private tables and signed-out access is denied.
 7. Choose a paid production plan and recovery plan. Configure database backups/PITR to the required recovery objectives and separately plan backups for Storage objects if photos are added later. Database backups do not cover Storage objects.
 8. Set Edge Function Secrets for `OPENROUTER_API_KEY`, a vision-and-structured-output-capable `OPENROUTER_MODEL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GROWTHER_ALLOWED_ORIGINS` containing the exact HTTPS and Android `https://localhost` origins, and email sending values described below. The Edge Functions use Supabase-provided `SUPABASE_URL` and `SUPABASE_ANON_KEY`; never put provider secrets in the static site.
 9. Deploy `verify-play-subscription` and `scan-meal` with `supabase functions deploy verify-play-subscription --project-ref <production-project-ref>` and `supabase functions deploy scan-meal --project-ref <production-project-ref>`. Keep JWT verification enabled. AI requests require a current paid Play subscription, and each account has a shared seven-request daily limit for photo scans and typed meal estimates.
@@ -49,12 +49,11 @@ Before inviting users, use dedicated test accounts and verify:
 
 1. Signup, email confirmation, sign-in, sign-out, and recovery emails work on the production domain.
 2. A non-adult profile is blocked before any profile or backup data can be written.
-3. Manual upload creates only that account's `account_backups` row; sign-out and a second account cannot access it.
 4. Restore only replaces the intended local browser data after the confirmation prompt. Test it with disposable data first.
 5. An unavailable network leaves the local app usable and shows a clear cloud error. No automatic upload occurs.
 6. Production site uses HTTPS, the correct production Supabase URL/key, and the expected service-worker cache version.
 7. Account deletion removes a disposable account's auth identity, backup, logs, quota record, and any stored photos. Its browser data clears only after a successful server response. Verify failed deletion leaves browser records available for export. Verify support delivery separately.
 8. A signed-in adult can scan a meal, review global cuisine/dish estimates, edit or remove detected items, and save the edited result to the existing local food log. A signed-out user is blocked.
-9. Each support form requires a name, valid reply email, message, and separate email consent; the configured inbox receives it, with the sender set as Reply-To. The Storage view reports local app data and browser origin usage; export downloads app-owned local keys, and clear removes app-owned local data while preserving unrelated origin data and separate cloud backups.
+9. Each support form requires a name, valid reply email, message, and separate email consent; the configured inbox receives it, with the sender set as Reply-To. The Storage view reports local app data and browser origin usage; export downloads app-owned local keys, and clear removes app-owned local data while preserving unrelated origin data.
 
 Do not use real personal records during smoke testing. The Supabase dashboard/project, production domain, SMTP credentials, and deployment target must be controlled by the app owner; this preparation intentionally does not sign up users, apply migrations, or publish the site.
